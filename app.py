@@ -8,6 +8,10 @@ import tempfile
 from PyPDF2 import PdfReader
 import io
 import time
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 st.set_page_config(page_title="Prompt Playground", layout="wide")
 
@@ -22,6 +26,14 @@ if 'thread_id' not in st.session_state:
     st.session_state.thread_id = None
 if 'client' not in st.session_state:
     st.session_state.client = None
+if 'selected_model' not in st.session_state:
+    st.session_state.selected_model = 'gpt-4o'
+
+# Initialize OpenAI client with API key from environment variable
+if not st.session_state.client:
+    api_key = os.getenv('OPENAI_API_KEY')
+    if api_key:
+        st.session_state.client = OpenAI(api_key=api_key)
 
 def read_pdf_content(file):
     """Read content from PDF file"""
@@ -69,7 +81,7 @@ def initialize_assistant(client, instructions):
             name="File Analysis Assistant",
             instructions=instructions,
             tools=[{"type": "code_interpreter"}],
-            model="gpt-4-turbo-preview"
+            model=st.session_state.selected_model
         )
         return assistant.id
     except Exception as e:
@@ -115,11 +127,29 @@ def get_ai_response(client, thread_id, prompt):
 with st.sidebar:
     st.title("Configuration")
     
-    # API Key input
-    api_key = st.text_input("OpenAI API Key", type="password")
-    if api_key:
-        st.session_state.api_key = api_key
-        st.session_state.client = OpenAI(api_key=api_key)
+    if not st.session_state.client:
+        st.error("OpenAI API key not found in environment variables. Please set OPENAI_API_KEY.")
+    
+    # Model selection
+    model_options = ['gpt-4o', 'gpt-4o-mini', 'gpt-o1-preview']
+    selected_model = st.selectbox(
+        "Select Model",
+        options=model_options,
+        index=model_options.index(st.session_state.selected_model)
+    )
+    
+    # Update model if changed
+    if selected_model != st.session_state.selected_model:
+        st.session_state.selected_model = selected_model
+        if st.session_state.client:
+            # Reinitialize assistant with new model
+            assistant_id = initialize_assistant(st.session_state.client, st.session_state.system_prompt)
+            if assistant_id:
+                st.session_state.assistant_id = assistant_id
+                thread = st.session_state.client.beta.threads.create()
+                st.session_state.thread_id = thread.id
+                st.session_state.messages = []
+                st.rerun()
     
     # System prompt input
     st.subheader("System Prompt")
@@ -148,7 +178,7 @@ with st.sidebar:
     if system_prompt_input or file_contents:
         st.session_state.system_prompt = f"{system_prompt_input}\n\nContext from uploaded files:\n\n{file_contents}"
         
-        # Initialize or update assistant if we have an API key
+        # Initialize or update assistant if we have a client
         if st.session_state.client:
             # Initialize assistant with combined prompt
             assistant_id = initialize_assistant(st.session_state.client, st.session_state.system_prompt)
@@ -174,7 +204,7 @@ for message in st.session_state.messages:
 # Chat input
 if prompt := st.chat_input("Enter your message"):
     if not st.session_state.client:
-        st.error("Please enter your OpenAI API key in the sidebar.")
+        st.error("OpenAI API key not found in environment variables. Please set OPENAI_API_KEY.")
         st.stop()
     
     if not st.session_state.assistant_id or not st.session_state.thread_id:
