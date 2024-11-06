@@ -131,7 +131,7 @@ with st.sidebar:
         st.error("OpenAI API key not found in environment variables. Please set OPENAI_API_KEY.")
     
     # Model selection
-    model_options = ['gpt-4o', 'gpt-4o-mini', 'gpt-o1-preview']
+    model_options = ['gpt-4o', 'gpt-4o-mini', 'o1-preview','o1-mini']
     selected_model = st.selectbox(
         "Select Model",
         options=model_options,
