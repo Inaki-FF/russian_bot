@@ -8,10 +8,9 @@ import tempfile
 from PyPDF2 import PdfReader
 import io
 import time
-from dotenv import load_dotenv
 
-# Load environment variables
-load_dotenv()
+
+
 
 st.set_page_config(page_title="Prompt Playground", layout="wide")
 
@@ -31,9 +30,9 @@ if 'selected_model' not in st.session_state:
 
 # Initialize OpenAI client with API key from environment variable
 if not st.session_state.client:
-    api_key = os.getenv('OPENAI_API_KEY')
+    api_key = os.environ.get('OPENAI_API_KEY')
     if api_key:
-        st.session_state.client = OpenAI(api_key=api_key)
+        st.session_state.client = OpenAI()
 
 def read_pdf_content(file):
     """Read content from PDF file"""
@@ -131,7 +130,7 @@ with st.sidebar:
         st.error("OpenAI API key not found in environment variables. Please set OPENAI_API_KEY.")
     
     # Model selection
-    model_options = ['gpt-4o', 'gpt-4o-mini', 'o1-preview','o1-mini']
+    model_options = ['gpt-4o', 'gpt-4o-mini', 'gpt-o1-preview']
     selected_model = st.selectbox(
         "Select Model",
         options=model_options,
