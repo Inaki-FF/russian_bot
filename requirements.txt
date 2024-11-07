@@ -1,3 +1,4 @@
+dotenv
 altair
 annotated-types
 anyio
@@ -54,5 +55,4 @@ tqdm
 typing_extensions
 tzdata
 urllib3
-dotenv
 
