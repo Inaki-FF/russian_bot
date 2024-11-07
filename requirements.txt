@@ -54,4 +54,5 @@ tqdm
 typing_extensions
 tzdata
 urllib3
+dotenv
 
